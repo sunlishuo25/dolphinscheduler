@@ -459,7 +459,7 @@ export default defineComponent({
             v-slots={{
               trigger: () => (
                 <NButton
-                  class={[Styles['toolbar-right-item'], 'graph-format']}
+                  class={Styles['toolbar-right-item']}
                   strong
                   secondary
                   circle

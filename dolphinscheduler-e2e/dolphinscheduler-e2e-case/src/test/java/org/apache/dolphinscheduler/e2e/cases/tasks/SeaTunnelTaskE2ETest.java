@@ -31,7 +31,6 @@ import org.apache.dolphinscheduler.e2e.pages.project.workflow.WorkflowDefinition
 import org.apache.dolphinscheduler.e2e.pages.project.workflow.WorkflowForm;
 import org.apache.dolphinscheduler.e2e.pages.project.workflow.task.FlinkStreamTaskForm;
 import org.apache.dolphinscheduler.e2e.pages.project.workflow.task.SeaTunnelTaskForm;
-import org.apache.dolphinscheduler.e2e.pages.project.workflow.task.ShellTaskForm;
 import org.apache.dolphinscheduler.e2e.pages.security.SecurityPage;
 import org.apache.dolphinscheduler.e2e.pages.security.TenantPage;
 import org.apache.dolphinscheduler.e2e.pages.security.UserPage;
@@ -56,10 +55,6 @@ public class SeaTunnelTaskE2ETest extends BaseWorkflowE2ETest {
     private static final String STREAM_SCRIPT = engineScript("STREAMING", "ds-seatunnel-stream-data");
 
     private static final String BATCH_TASK = "st-batch";
-
-    private static final String SOLID = "none";
-
-    private static final String DASHED = "5 5";
 
     @BeforeAll
     public static void setup() {
@@ -92,7 +87,6 @@ public class SeaTunnelTaskE2ETest extends BaseWorkflowE2ETest {
         SeaTunnelTaskForm task = workflowForm.addTask(WorkflowForm.TaskType.SEATUNNEL);
         assertThat(task.isExecutionType("BATCH")).isTrue();
         task.script(BATCH_SCRIPT).deployMode("local").name(taskName).submit()
-                .formatDAG().confirm()
                 .submit()
                 .name(workflowName)
                 .submit();
@@ -129,7 +123,6 @@ public class SeaTunnelTaskE2ETest extends BaseWorkflowE2ETest {
                 .deployMode("local")
                 .name(taskName)
                 .submit()
-                .formatDAG().confirm()
                 .submit()
                 .name(workflowName)
                 .submit();
@@ -138,8 +131,7 @@ public class SeaTunnelTaskE2ETest extends BaseWorkflowE2ETest {
         workflowForm = workflowDefinitionTab().edit(workflowName);
         String copyName = workflowForm.copyTask(taskName);
         assertThat(copyName).startsWith(taskName + "_");
-        workflowForm.formatDAG().confirm()
-                .submit()
+        workflowForm.submit()
                 .submit();
 
         workflowForm = workflowDefinitionTab().edit(workflowName);
@@ -154,59 +146,6 @@ public class SeaTunnelTaskE2ETest extends BaseWorkflowE2ETest {
 
     @Test
     @Order(30)
-    void testEdgeStyleFollowsExecutionType() {
-        String workflowName = "SeaTunnelEdgeStyle";
-        String taskName = "st-edge";
-        WorkflowForm workflowForm = workflowDefinitionTab().createWorkflow();
-        workflowForm.<ShellTaskForm>addTask(WorkflowForm.TaskType.SHELL)
-                .script("echo pre-a")
-                .name("pre-a")
-                .submit()
-                .<ShellTaskForm>addTask(WorkflowForm.TaskType.SHELL)
-                .script("echo pre-b")
-                .name("pre-b")
-                .submit()
-                .openTaskCategory("di")
-                .<SeaTunnelTaskForm>addTask(WorkflowForm.TaskType.SEATUNNEL)
-                .script(BATCH_SCRIPT)
-                .deployMode("local")
-                .preTask("pre-a")
-                .preTask("pre-b")
-                .name(taskName)
-                .submit()
-                .formatDAG().confirm();
-        untilEdgeStyle(workflowForm, SOLID);
-
-        workflowForm.getTask(taskName);
-        new SeaTunnelTaskForm(workflowForm).executionType("STREAM").cancel();
-        untilEdgeStyle(workflowForm, SOLID);
-
-        workflowForm.getTask(taskName);
-        new SeaTunnelTaskForm(workflowForm).executionType("STREAM").submit();
-        untilEdgeStyle(workflowForm, DASHED);
-        workflowForm.submit()
-                .name(workflowName)
-                .submit();
-        untilWorkflowDefinitionExist(workflowName);
-
-        workflowForm = workflowDefinitionTab().edit(workflowName);
-        untilEdgeStyle(workflowForm, DASHED);
-        workflowForm.getTask(taskName);
-        new SeaTunnelTaskForm(workflowForm).executionType("BATCH").submit();
-        untilEdgeStyle(workflowForm, SOLID);
-        workflowForm.submit()
-                .submit();
-
-        workflowForm = workflowDefinitionTab().edit(workflowName);
-        untilEdgeStyle(workflowForm, SOLID);
-        workflowForm.getTask(taskName);
-        SeaTunnelTaskForm task = new SeaTunnelTaskForm(workflowForm);
-        assertThat(task.isExecutionType("BATCH")).isTrue();
-        task.cancel();
-    }
-
-    @Test
-    @Order(40)
     void testBatchRunIsListedUnderBatchTasks() {
         String workflowName = "SeaTunnelBatchRun";
         String taskName = BATCH_TASK;
@@ -231,7 +170,7 @@ public class SeaTunnelTaskE2ETest extends BaseWorkflowE2ETest {
     }
 
     @Test
-    @Order(50)
+    @Order(40)
     void testStreamRunIsListedUnderStreamTasks() {
         String workflowName = "SeaTunnelStreamRun";
         String taskName = "st-stream";
@@ -264,7 +203,7 @@ public class SeaTunnelTaskE2ETest extends BaseWorkflowE2ETest {
     }
 
     @Test
-    @Order(60)
+    @Order(50)
     void testFlinkStreamSavepointStaysEnabled() {
         String workflowName = "FlinkStreamRun";
         String taskName = "flink-stream";
@@ -320,11 +259,6 @@ public class SeaTunnelTaskE2ETest extends BaseWorkflowE2ETest {
                     return instance != null && state.test(instance);
                 });
         return taskInstanceTab;
-    }
-
-    private void untilEdgeStyle(WorkflowForm workflowForm, String style) {
-        await().ignoreExceptionsInstanceOf(StaleElementReferenceException.class)
-                .untilAsserted(() -> assertThat(workflowForm.edgeDashArrays()).containsExactly(style, style));
     }
 
     private ProjectDetailPage projectPage() {

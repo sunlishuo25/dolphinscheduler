@@ -29,7 +29,6 @@ import org.apache.dolphinscheduler.e2e.pages.project.workflow.task.SubWorkflowTa
 import org.apache.dolphinscheduler.e2e.pages.project.workflow.task.SwitchTaskForm;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -151,16 +150,6 @@ public final class WorkflowForm {
                 .withMessage("Copied task did not appear: " + taskName)
                 .until(ignored -> taskNames().stream().filter(name -> !existing.contains(name)).findFirst()
                         .orElse(null));
-    }
-
-    public List<String> edgeDashArrays() {
-        return driver.findElements(By.cssSelector(MAIN_GRAPH + " g[data-shape='dag-edge']")).stream()
-                .map(edge -> edge.findElements(By.cssSelector("path[stroke-dasharray]")).stream()
-                        .map(path -> path.getAttribute("stroke-dasharray").replace(',', ' ').trim()
-                                .replaceAll("\\s+", " "))
-                        .distinct()
-                        .collect(Collectors.joining(",")))
-                .collect(Collectors.toList());
     }
 
     private WebElement findTask(String taskName) {
