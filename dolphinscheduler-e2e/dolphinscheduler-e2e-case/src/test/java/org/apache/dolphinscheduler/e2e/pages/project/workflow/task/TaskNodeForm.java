@@ -29,10 +29,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
-import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -64,6 +62,12 @@ public abstract class TaskNodeForm {
             @FindBy(tagName = "input"),
     })
     private List<WebElement> inputParamValue;
+
+    @FindBys({
+            @FindBy(className = "pre-tasks-model"),
+            @FindBy(className = "n-base-selection"),
+    })
+    private WebElement selectPreTasks;
 
     @FindBys({
             @FindBy(className = "env-select"),
@@ -144,25 +148,19 @@ public abstract class TaskNodeForm {
     }
 
     public TaskNodeForm preTask(String preTaskName) {
-        UiInteraction.click(parent.driver(), ".pre-tasks-model .n-base-selection");
+        ((JavascriptExecutor) parent().driver()).executeScript("arguments[0].click();", selectPreTasks);
+
+        final By optionsLocator = By.className("option-pre-tasks");
+
         WebDriverWaitFactory.createWebDriverWait(parent.driver())
-                .withMessage("No such pre task: " + preTaskName)
-                .ignoring(StaleElementReferenceException.class)
-                .ignoring(ElementClickInterceptedException.class)
-                .until(ignored -> {
-                    WebElement option = parent.driver()
-                            .findElements(By.cssSelector(".n-base-select-menu .n-base-select-option__content"))
-                            .stream()
-                            .filter(WebElement::isDisplayed)
-                            .filter(it -> preTaskName.equals(it.getText().trim()))
-                            .findFirst()
-                            .orElse(null);
-                    if (option == null) {
-                        return false;
-                    }
-                    option.click();
-                    return true;
-                });
+                .until(ExpectedConditions.visibilityOfElementLocated(optionsLocator));
+
+        List<WebElement> webElements = parent.driver().findElements(optionsLocator);
+        webElements.stream()
+                .filter(it -> it.getText().contains(preTaskName))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No such task: " + preTaskName))
+                .click();
 
         inputNodeName().click();
 

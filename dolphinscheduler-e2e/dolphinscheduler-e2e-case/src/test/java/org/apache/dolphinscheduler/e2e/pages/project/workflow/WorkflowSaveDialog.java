@@ -17,7 +17,6 @@
 
 package org.apache.dolphinscheduler.e2e.pages.project.workflow;
 
-import org.apache.dolphinscheduler.e2e.core.UiInteraction;
 import org.apache.dolphinscheduler.e2e.core.WebDriverWaitFactory;
 
 import lombok.Getter;
@@ -41,6 +40,9 @@ public final class WorkflowSaveDialog {
             @FindBy(tagName = "input")
     })
     private WebElement inputName;
+
+    @FindBy(xpath = "//div[contains(text(), 'Basic Information')]/../following-sibling::div[contains(@class, 'n-card__footer')]//button[contains(@class, 'btn-submit')]")
+    private WebElement buttonSubmit;
 
     @FindBys({
             @FindBy(className = "input-global-params"),
@@ -83,7 +85,8 @@ public final class WorkflowSaveDialog {
     }
 
     public WorkflowForm submit() {
-        UiInteraction.click(driver, "[data-modal-ready] .btn-submit");
+        WebDriverWaitFactory.createWebDriverWait(driver).until(ExpectedConditions.elementToBeClickable(buttonSubmit));
+        buttonSubmit.click();
         WebDriverWaitFactory.createWebDriverWait(driver).until(ExpectedConditions.urlContains("workflow-definition"));
         return parent;
     }
